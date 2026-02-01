@@ -1317,11 +1317,14 @@ if (CMAKE_OSX_ARCHITECTURES      STREQUAL "arm64" OR
         set(CMAKE_REQUIRED_FLAGS_PREV ${CMAKE_REQUIRED_FLAGS})
 
         # Set architecture flags for feature detection
+        # Note: Use armv8.4-a for feature detection instead of -march=native
+        # because -march=native may not enable all extensions (like dotprod)
+        # even when the CPU supports them. armv8.4-a includes dotprod support.
         if (GGML_NATIVE)
-            list(APPEND CMAKE_REQUIRED_FLAGS -march=native)
+            list(APPEND CMAKE_REQUIRED_FLAGS -march=armv8.4-a)
         else()
-            # Use armv8.2-a for dot product support detection
-            list(APPEND CMAKE_REQUIRED_FLAGS -march=armv8.2-a)
+            # Use armv8.4-a for dot product support detection
+            list(APPEND CMAKE_REQUIRED_FLAGS -march=armv8.4-a)
         endif()
 
         # Check for ARM dot product support
