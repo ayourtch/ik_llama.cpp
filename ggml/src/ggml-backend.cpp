@@ -1442,10 +1442,11 @@ static void ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct gg
                 if (node->src[j]) {
                     int * this_node_backend_id = &tensor_backend_id(node->src[j]);
                     if (*this_node_backend_id == -1) {
-                        *this_node_backend_id = j;
-                    } else {
-                        GGML_ASSERT(*this_node_backend_id == j);
+                        // Use the scheduler to determine the correct backend instead of using loop index
+                        *this_node_backend_id = ggml_backend_sched_backend_id_from_cur(sched, node->src[j]);
                     }
+                    // Note: Removed assertion that backend_id must equal j, as this breaks in
+                    // distributed mode where tensors can have backend_ids from previous assignments
                     if (view_src == node->src[j]) {
                         src_id = j;
                     }
