@@ -49,7 +49,7 @@ inline std::vector<std::pair<float,int>> & get_work_buffer(size_t size) {
     return buffer;
 
 }
-#ifdef __ARM_NEON
+#if defined __ARM_NEON && defined IQK_IMPLEMENT
 inline float32x4_t v_sigmoid(float32x4_t x) {
     const float32x4_t one = vdupq_n_f32(1.0f);
     const float32x4_t zero = vdupq_n_f32(0.0f);
@@ -95,7 +95,7 @@ inline void biased_sigmoid(int n, const float * x, const float * bias, float * y
         _mm256_storeu_ps(z + i, v);
     }
 #endif
-#ifdef __ARM_NEON
+#if defined __ARM_NEON && defined IQK_IMPLEMENT
     for (; i + 3 < n; i += 4) {
         auto v = v_sigmoid(vld1q_f32(x + i));
         vst1q_f32(y + i, vaddq_f32(v, vld1q_f32(bias + i)));
@@ -121,7 +121,7 @@ inline void biased_sigmoid(int n, const float * x, const float * bias, float * y
         _mm256_storeu_ps(y + i, _mm256_add_ps(v, _mm256_loadu_ps(bias + i)));
     }
 #endif
-#ifdef __ARM_NEON
+#if defined __ARM_NEON && defined IQK_IMPLEMENT
     for (; i + 3 < n; i += 4) {
         auto v = v_sigmoid(vld1q_f32(x + i));
         vst1q_f32(y + i, vaddq_f32(v, vld1q_f32(bias + i)));

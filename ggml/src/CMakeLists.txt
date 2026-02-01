@@ -1309,6 +1309,9 @@ if (CMAKE_OSX_ARCHITECTURES      STREQUAL "arm64" OR
 
         set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_PREV})
     else()
+        if (GGML_NATIVE)
+            list(APPEND ARCH_FLAGS -march=native)
+        endif()
         check_cxx_compiler_flag(-mfp16-format=ieee COMPILER_SUPPORTS_FP16_FORMAT_I3E)
         if (NOT "${COMPILER_SUPPORTS_FP16_FORMAT_I3E}" STREQUAL "")
             list(APPEND ARCH_FLAGS -mfp16-format=ieee)
