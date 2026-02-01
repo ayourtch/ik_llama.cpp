@@ -1317,14 +1317,14 @@ if (CMAKE_OSX_ARCHITECTURES      STREQUAL "arm64" OR
         set(CMAKE_REQUIRED_FLAGS_PREV ${CMAKE_REQUIRED_FLAGS})
 
         # Set architecture flags for feature detection
-        # Note: Use armv8.4-a for feature detection instead of -march=native
-        # because -march=native may not enable all extensions (like dotprod)
-        # even when the CPU supports them. armv8.4-a includes dotprod support.
+        # Note: Use armv8.4-a+fp16 for feature detection instead of -march=native
+        # because -march=native may not enable all extensions (like dotprod, fp16)
+        # even when the CPU supports them. armv8.4-a+fp16 includes dotprod and FP16 support.
         if (GGML_NATIVE)
-            list(APPEND CMAKE_REQUIRED_FLAGS -march=armv8.4-a)
+            list(APPEND CMAKE_REQUIRED_FLAGS -march=armv8.4-a+fp16)
         else()
-            # Use armv8.4-a for dot product support detection
-            list(APPEND CMAKE_REQUIRED_FLAGS -march=armv8.4-a)
+            # Use armv8.4-a+fp16 for dot product and FP16 support detection
+            list(APPEND CMAKE_REQUIRED_FLAGS -march=armv8.4-a+fp16)
         endif()
 
         # Check for ARM dot product support
@@ -1353,7 +1353,8 @@ if (CMAKE_OSX_ARCHITECTURES      STREQUAL "arm64" OR
             # Use armv8.4-a instead of -march=native because -march=native
             # may not enable all needed extensions (like dotprod) on some ARM systems.
             # armv8.4-a ensures dot product and other ARMv8.4+ features are enabled.
-            list(APPEND ARCH_FLAGS -march=armv8.4-a)
+            # Also add +fp16 to enable FP16 vector arithmetic instructions.
+            list(APPEND ARCH_FLAGS -march=armv8.4-a+fp16)
         endif()
         check_cxx_compiler_flag(-mfp16-format=ieee COMPILER_SUPPORTS_FP16_FORMAT_I3E)
         if (NOT "${COMPILER_SUPPORTS_FP16_FORMAT_I3E}" STREQUAL "")
