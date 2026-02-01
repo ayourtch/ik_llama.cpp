@@ -1309,6 +1309,43 @@ if (CMAKE_OSX_ARCHITECTURES      STREQUAL "arm64" OR
 
         set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_PREV})
     else()
+        add_compile_definitions(__aarch64__)
+        add_compile_definitions(__ARM_NEON)
+        add_compile_definitions(__ARM_FEATURE_FMA)
+
+        # Save current CMAKE_REQUIRED_FLAGS
+        set(CMAKE_REQUIRED_FLAGS_PREV ${CMAKE_REQUIRED_FLAGS})
+
+        # Set architecture flags for feature detection
+        if (GGML_NATIVE)
+            list(APPEND CMAKE_REQUIRED_FLAGS -march=native)
+        else()
+            # Use armv8.2-a for dot product support detection
+            list(APPEND CMAKE_REQUIRED_FLAGS -march=armv8.2-a)
+        endif()
+
+        # Check for ARM dot product support
+        check_cxx_source_compiles("#include <arm_neon.h>\nint main() { int8x16_t _a, _b; int32x4_t _s = vdotq_s32(_s, _a, _b); return 0; }" GGML_COMPILER_SUPPORT_DOTPROD)
+        if (GGML_COMPILER_SUPPORT_DOTPROD)
+            add_compile_definitions(__ARM_FEATURE_DOTPROD)
+        endif()
+
+        # Check for ARM matrix multiply int8 support
+        check_cxx_source_compiles("#include <arm_neon.h>\nint main() { int8x16_t _a, _b; int32x4_t _s = vmlaq_f32(_s, _a, _b); return 0; }" GGML_COMPILER_SUPPORT_MATMUL_INT8)
+        if (GGML_COMPILER_SUPPORT_MATMUL_INT8)
+            add_compile_definitions(__ARM_FEATURE_MATMUL_INT8)
+        endif()
+
+        # Check for ARM FP16 vector arithmetic support
+        check_cxx_source_compiles("#include <arm_neon.h>\nint main() { float16_t _a; float16x8_t _s = vdupq_n_f16(_a); return 0; }" GGML_COMPILER_SUPPORT_FP16_VECTOR_ARITHMETIC)
+        if (GGML_COMPILER_SUPPORT_FP16_VECTOR_ARITHMETIC)
+            add_compile_definitions(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+        endif()
+
+        # Restore CMAKE_REQUIRED_FLAGS
+        set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_PREV})
+
+        # Set actual architecture flags for compilation
         if (GGML_NATIVE)
             list(APPEND ARCH_FLAGS -march=native)
         endif()
