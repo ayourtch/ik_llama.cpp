@@ -1350,7 +1350,10 @@ if (CMAKE_OSX_ARCHITECTURES      STREQUAL "arm64" OR
 
         # Set actual architecture flags for compilation
         if (GGML_NATIVE)
-            list(APPEND ARCH_FLAGS -march=native)
+            # Use armv8.4-a instead of -march=native because -march=native
+            # may not enable all needed extensions (like dotprod) on some ARM systems.
+            # armv8.4-a ensures dot product and other ARMv8.4+ features are enabled.
+            list(APPEND ARCH_FLAGS -march=armv8.4-a)
         endif()
         check_cxx_compiler_flag(-mfp16-format=ieee COMPILER_SUPPORTS_FP16_FORMAT_I3E)
         if (NOT "${COMPILER_SUPPORTS_FP16_FORMAT_I3E}" STREQUAL "")
