@@ -1442,11 +1442,28 @@ static void ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct gg
                 if (node->src[j]) {
                     int * this_node_backend_id = &tensor_backend_id(node->src[j]);
                     if (*this_node_backend_id == -1) {
-                        // Use the scheduler to determine the correct backend instead of using loop index
-                        *this_node_backend_id = ggml_backend_sched_backend_id_from_cur(sched, node->src[j]);
+                        *this_node_backend_id = j;
+                    } else {
+                        // In distributed RPC mode, tensors can have backend_ids from previous
+                        // assignments that don't match the loop index. Only enforce the invariant
+                        // for local CUDA backends where src[j] must be on backend j for
+                        // in-place reduction to work: dst->data == dst->src[ctx.device]->data
+                        ggml_backend_t backend = sched->backends[*this_node_backend_id];
+                        if (backend) {
+                            const char * backend_name = backend->iface.get_name(backend);
+                            // Check if this is a local CUDA backend (not RPC)
+                            // RPC backends have names like "RPC" while CUDA backends have "CUDA"
+                            bool is_local_cuda = (strstr(backend_name, "CUDA") != NULL ||
+                                                  strstr(backend_name, "ROCm") != NULL ||
+                                                  strstr(backend_name, "MUSA") != NULL) &&
+                                                 strstr(backend_name, "RPC") == NULL;
+                            if (is_local_cuda) {
+                                GGML_ASSERT(*this_node_backend_id == j);
+                            }
+                            // For RPC backends, the backend_id can differ from j because
+                            // the actual CUDA device on the RPC worker has its own device index
+                        }
                     }
-                    // Note: Removed assertion that backend_id must equal j, as this breaks in
-                    // distributed mode where tensors can have backend_ids from previous assignments
                     if (view_src == node->src[j]) {
                         src_id = j;
                     }
